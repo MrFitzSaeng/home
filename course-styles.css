@@ -20,6 +20,12 @@ body {
   padding: 1rem;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
   color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sidebar-content {
+  /* Contains the modules navigation */
 }
 .sidebar h2 {
   margin-top: 0;
@@ -49,6 +55,24 @@ body {
 }
 .lessons li a:hover {
   text-decoration: underline;
+}
+
+/* Sidebar Footer (Home Button) */
+.sidebar-footer {
+  text-align: center;
+  padding-top: 1rem;
+}
+.home-button {
+  display: inline-block;
+  background-color: #fbc531;
+  color: #16213e;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+}
+.home-button:hover {
+  background-color: #ffcc00;
 }
 
 /* Main Content Styles */
