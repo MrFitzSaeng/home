@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spanish Present Tense Practice Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+    }
+    h1, h2, h3 {
+      color: #333;
+    }
+    #game {
+      background-color: #fff;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    input[type="text"] {
+      font-size: 16px;
+      padding: 5px;
+      margin: 0 5px;
+      width: 200px;
+    }
+    button {
+      margin: 10px 5px;
+      padding: 8px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #eee;
+    }
+    #timer {
+      font-size: 18px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    #feedback {
+      font-size: 24px;
+      margin: 10px 0;
+      height: 30px;
+    }
+    .mode-score {
+      font-size: 14px;
+      color: #555;
+    }
+    .hover-info {
+      border-bottom: 1px dotted #333;
+      cursor: help;
+    }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+
+  <script>
+    // ---------------- Global Data ----------------
+    // Verb lists for each type
+    const verbLists = {
+      "ar": [
+        "lavar", "preparar", "invitar", "pasar", "montar", 
+        "hablar", "bailar", "visitar", "comprar", "sacar", 
+        "escuchar", "nadar"
+      ],
+      "er": [
+        "comer", "beber", "aprender", "correr", "leer", 
+        "vender", "romper", "creer", "prometer", "responder", 
+        "temer", "comprender"
+      ],
+      "ir": [
+        "vivir", "escribir", "recibir", "asistir", "decidir", 
+        "permitir", "describir", "partir", "subir", "sufrir", 
+        "compartir", "existir"
+      ]
+    };
+
+    // Sentence templates for each verb type.
+    // "______" indicates the blank for the answer.
+    // "(VERB)" will be replaced by the actual infinitive.
+    // "person" is used for conjugation.
+    const sentenceTemplates = {
+      "ar": [
+        { template: "Yo ______ (VERB) el coche de mi padre los domingos.", person: "yo" },
+        { template: "¿Tú ______ (VERB) la comida en casa?", person: "tú" },
+        { template: "Mi hermano ______ (VERB) a Pablo a la fiesta.", person: "él" },
+        { template: "Nosotros ______ (VERB) la aspiradora.", person: "nosotros" },
+        { template: "Vosotras ______ (VERB) en globo.", person: "vosotros" },
+        { template: "Mi madre ______ (VERB) con el profesor.", person: "él" },
+        { template: "Mis amigos ______ (VERB) en la discoteca.", person: "ellos" },
+        { template: "Yo ______ (VERB) el museo.", person: "yo" },
+        { template: "Él ______ (VERB) una hamburguesa.", person: "él" },
+        { template: "En su tiempo libre, mi hermana ______ (VERB) fotos.", person: "él" },
+        { template: "Vosotros ______ (VERB) música en la radio.", person: "vosotros" },
+        { template: "María y Luisa ______ (VERB) en la piscina.", person: "ellos" }
+      ],
+      "er": [
+        { template: "Yo ______ (VERB) una manzana todos los días.", person: "yo" },
+        { template: "¿Tú ______ (VERB) agua después de correr?", person: "tú" },
+        { template: "Mi amigo ______ (VERB) inglés en la escuela.", person: "él" },
+        { template: "Nosotros ______ (VERB) en el parque cada mañana.", person: "nosotros" },
+        { template: "Vosotros ______ (VERB) libros interesantes.", person: "vosotros" },
+        { template: "Mi hermana ______ (VERB) limonada en el verano.", person: "él" },
+        { template: "Mis padres ______ (VERB) el pan en la mesa.", person: "ellos" },
+        { template: "Él ______ (VERB) en los milagros.", person: "él" },
+        { template: "En la clase, tú ______ (VERB) prestar atención.", person: "tú" },
+        { template: "Ustedes ______ (VERB) rápidamente a las preguntas.", person: "ellos" },
+        { template: "Mi primo ______ (VERB) a la oscuridad.", person: "él" },
+        { template: "María y José ______ (VERB) la lección.", person: "ellos" }
+      ],
+      "ir": [
+        { template: "Yo ______ (VERB) en una ciudad bonita.", person: "yo" },
+        { template: "¿Tú ______ (VERB) cartas a tus amigos?", person: "tú" },
+        { template: "Mi primo ______ (VERB) un regalo sorpresa.", person: "él" },
+        { template: "Nosotros ______ (VERB) a la reunión familiar.", person: "nosotros" },
+        { template: "Vosotras ______ (VERB) qué película ver.", person: "vosotros" },
+        { template: "Mi abuela ______ (VERB) que juguemos en el parque.", person: "él" },
+        { template: "Mis amigos ______ (VERB) la excursión en detalle.", person: "ellos" },
+        { template: "Yo ______ (VERB) hacia nuevas aventuras.", person: "yo" },
+        { template: "Él ______ (VERB) las escaleras rápidamente.", person: "él" },
+        { template: "En la clase, tú ______ (VERB) los exámenes con calma.", person: "tú" },
+        { template: "Vosotros ______ (VERB) vuestros secretos.", person: "vosotros" },
+        { template: "María y Carlos ______ (VERB) en un mundo de sueños.", person: "ellos" }
+      ]
+    };
+
+    // ---------------- Global Game State Variables ----------------
+    let currentRound = null;       // "ar", "er", or "ir" for normal rounds
+    let currentIndex = 0;          // Question index for normal rounds
+    let score = 0;
+    let incorrectAnswers = [];     // To store incorrect answers for review
+
+    // To track overall scores for each mode.
+    const normalRoundsResults = { ar: null, er: null, ir: null };
+    let hardRoundResult = null;
+    let bonusModeResult = null;
+    let unlockedExtraModes = false;
+
+    // For Hard Round mode
+    let hardQuestions = [];        // Array of 12 mixed questions
+    let hardIndex = 0;
+
+    // For Bonus Mode
+    let bonusTime = 60;            // 60-second timer
+    let bonusTimer;                // Holds the interval ID
+    let bonusScore = 0;
+    let bonusTotal = 0;
+    let currentBonusQuestion = null;
+
+    // ---------------- Utility Functions ----------------
+    function getCombinedQuestions() {
+      const combined = [];
+      ["ar", "er", "ir"].forEach(type => {
+        for (let i = 0; i < verbLists[type].length; i++) {
+          combined.push({
+            type: type,
+            verb: verbLists[type][i],
+            template: sentenceTemplates[type][i].template,
+            person: sentenceTemplates[type][i].person
+          });
+        }
+      });
+      return combined;
+    }
+
+    // Fisher-Yates Shuffle
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function conjugate(verb, person) {
+      const ending = verb.slice(-2);
+      const stem = verb.slice(0, -2);
+      if (ending === "ar") {
+        switch(person) {
+          case "yo": return stem + "o";
+          case "tú": return stem + "as";
+          case "él": return stem + "a";
+          case "nosotros": return stem + "amos";
+          case "vosotros": return stem + "áis";
+          case "ellos": return stem + "an";
+          default: return "";
+        }
+      } else if (ending === "er") {
+        switch(person) {
+          case "yo": return stem + "o";
+          case "tú": return stem + "es";
+          case "él": return stem + "e";
+          case "nosotros": return stem + "emos";
+          case "vosotros": return stem + "éis";
+          case "ellos": return stem + "en";
+          default: return "";
+        }
+      } else if (ending === "ir") {
+        switch(person) {
+          case "yo": return stem + "o";
+          case "tú": return stem + "es";
+          case "él": return stem + "e";
+          case "nosotros": return stem + "imos";
+          case "vosotros": return stem + "ís";
+          case "ellos": return stem + "en";
+          default: return "";
+        }
+      }
+      return "";
+    }
+
+    // ---------------- Main Display Function ----------------
+    const gameDiv = document.getElementById("game");
+
+    function showMenu() {
+      const arScore = normalRoundsResults.ar !== null ? normalRoundsResults.ar + "%" : "Not played yet";
+      const erScore = normalRoundsResults.er !== null ? normalRoundsResults.er + "%" : "Not played yet";
+      const irScore = normalRoundsResults.ir !== null ? normalRoundsResults.ir + "%" : "Not played yet";
+      const hardScore = hardRoundResult !== null ? hardRoundResult + "%" : "Not played yet";
+      const bonusScoreDisplay = bonusModeResult !== null ? bonusModeResult + "%" : "Not played yet";
+
+      const hardDisabled = unlockedExtraModes ? "" : "disabled title='Unlock by scoring at least 80% on all normal rounds'";
+      const bonusDisabled = unlockedExtraModes ? "" : "disabled title='Unlock by scoring at least 80% on all normal rounds'";
+
+      gameDiv.innerHTML = `
+        <h1>Spanish Present Tense Practice</h1>
+        <p>Select a round to practice conjugating regular verbs in sentences:</p>
+        <div>
+          <button onclick="startRound('ar')">Practice -ar Verbs</button>
+          <div class="mode-score">Score: ${arScore}</div>
+        </div>
+        <div>
+          <button onclick="startRound('er')">Practice -er Verbs</button>
+          <div class="mode-score">Score: ${erScore}</div>
+        </div>
+        <div>
+          <button onclick="startRound('ir')">Practice -ir Verbs</button>
+          <div class="mode-score">Score: ${irScore}</div>
+        </div>
+        <hr>
+        <h2>Extra Modes <span class="hover-info" title="Unlock these modes by scoring at least 80% on all three normal rounds.">[?]</span></h2>
+        <div>
+          <button onclick="startHardRound()" ${hardDisabled}>Hard Round (Mixed Questions)</button>
+          <div class="mode-score">Score: ${hardScore}</div>
+        </div>
+        <div>
+          <button onclick="startBonusMode()" ${bonusDisabled}>Bonus Mode (1 Minute Challenge)</button>
+          <div class="mode-score">Score: ${bonusScoreDisplay}</div>
+        </div>
+        <hr>
+        <h2>Conjugation Examples</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>-ar (hablar)</th>
+              <th>-er (comer)</th>
+              <th>-ir (vivir)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Yo</td>
+              <td>${conjugate("hablar", "yo")}</td>
+              <td>${conjugate("comer", "yo")}</td>
+              <td>${conjugate("vivir", "yo")}</td>
+            </tr>
+            <tr>
+              <td>Tú</td>
+              <td>${conjugate("hablar", "tú")}</td>
+              <td>${conjugate("comer", "tú")}</td>
+              <td>${conjugate("vivir", "tú")}</td>
+            </tr>
+            <tr>
+              <td>Él/Ella/Usted</td>
+              <td>${conjugate("hablar", "él")}</td>
+              <td>${conjugate("comer", "él")}</td>
+              <td>${conjugate("vivir", "él")}</td>
+            </tr>
+            <tr>
+              <td>Nosotros</td>
+              <td>${conjugate("hablar", "nosotros")}</td>
+              <td>${conjugate("comer", "nosotros")}</td>
+              <td>${conjugate("vivir", "nosotros")}</td>
+            </tr>
+            <tr>
+              <td>Vosotros</td>
+              <td>${conjugate("hablar", "vosotros")}</td>
+              <td>${conjugate("comer", "vosotros")}</td>
+              <td>${conjugate("vivir", "vosotros")}</td>
+            </tr>
+            <tr>
+              <td>Ellos/Ellas/Ustedes</td>
+              <td>${conjugate("hablar", "ellos")}</td>
+              <td>${conjugate("comer", "ellos")}</td>
+              <td>${conjugate("vivir", "ellos")}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    // ---------------- Normal Rounds Functions ----------------
+    function startRound(type) {
+      currentRound = type;
+      currentIndex = 0;
+      score = 0;
+      incorrectAnswers = [];
+      showQuestion();
+    }
+
+    function showQuestion() {
+      if (currentIndex < verbLists[currentRound].length) {
+        const verb = verbLists[currentRound][currentIndex];
+        const sentenceObj = sentenceTemplates[currentRound][currentIndex];
+        const sentence = sentenceObj.template.replace("(VERB)", `(${verb})`);
+        const correctAnswer = conjugate(verb, sentenceObj.person);
+        gameDiv.innerHTML = `
+          <h2>Question ${currentIndex + 1} of ${verbLists[currentRound].length}</h2>
+          <form id="answerForm" onsubmit="event.preventDefault(); submitAnswer('${verb}', '${correctAnswer}');">
+            <p>${sentence.replace("______", "<input type='text' id='userAnswer' autocomplete='off' placeholder='Your answer' required>")}</p>
+            <button type="submit">Submit</button>
+          </form>
+          <div id="feedback"></div>
+          <p>Score: ${score}/${verbLists[currentRound].length} (${Math.round((score/(currentIndex || 1))*100)}%)</p>
+        `;
+        document.getElementById("userAnswer").focus();
+      } else {
+        endRound();
+      }
+    }
+
+    function submitAnswer(verb, correctAnswer) {
+      const userInput = document.getElementById("userAnswer").value.trim().toLowerCase();
+      let isCorrect = (userInput === correctAnswer.toLowerCase());
+      const feedbackDiv = document.getElementById("feedback");
+      if (isCorrect) {
+        score++;
+        feedbackDiv.innerHTML = "<span style='color: green;'>✓</span>";
+      } else {
+        const sentenceObj = sentenceTemplates[currentRound][currentIndex];
+        incorrectAnswers.push({
+          sentence: sentenceObj.template.replace("(VERB)", `(${verb})`),
+          yourAnswer: userInput,
+          correctAnswer: correctAnswer
+        });
+        feedbackDiv.innerHTML = "<span style='color: red;'>✕</span>";
+      }
+      setTimeout(() => {
+        currentIndex++;
+        showQuestion();
+      }, 300);
+    }
+
+    function endRound() {
+      const total = verbLists[currentRound].length;
+      const percentage = Math.round((score / total) * 100);
+      normalRoundsResults[currentRound] = percentage;
+      if (
+        normalRoundsResults.ar !== null &&
+        normalRoundsResults.er !== null &&
+        normalRoundsResults.ir !== null &&
+        normalRoundsResults.ar >= 80 &&
+        normalRoundsResults.er >= 80 &&
+        normalRoundsResults.ir >= 80
+      ) {
+        unlockedExtraModes = true;
+      }
+      
+      let feedbackHTML = `<h2>Round Complete!</h2>
+                          <p>Your score: ${score}/${total} (${percentage}%)</p>`;
+      if (incorrectAnswers.length > 0) {
+        feedbackHTML += `<h3>Review Incorrect Answers:</h3>
+                         <table>
+                           <tr>
+                             <th>Sentence</th>
+                             <th>Your Answer</th>
+                             <th>Correct Answer</th>
+                           </tr>`;
+        incorrectAnswers.forEach(item => {
+          feedbackHTML += `<tr>
+                             <td>${item.sentence}</td>
+                             <td>${item.yourAnswer}</td>
+                             <td>${item.correctAnswer}</td>
+                           </tr>`;
+        });
+        feedbackHTML += `</table>`;
+      } else {
+        feedbackHTML += `<p>Excellent! All answers were correct.</p>`;
+      }
+      feedbackHTML += `<p>Would you like to practice again?</p>
+                       <button onclick="showMenu()">Yes, back to main menu</button>
+                       <button onclick="quitGame()">No, exit</button>`;
+      gameDiv.innerHTML = feedbackHTML;
+    }
+
+    // ---------------- Hard Round Functions ----------------
+    function startHardRound() {
+      const combined = shuffleArray(getCombinedQuestions());
+      hardQuestions = combined.slice(0, 12);
+      hardIndex = 0;
+      score = 0;
+      incorrectAnswers = [];
+      showHardQuestion();
+    }
+
+    function showHardQuestion() {
+      if (hardIndex < hardQuestions.length) {
+        const question = hardQuestions[hardIndex];
+        const sentence = question.template.replace("(VERB)", `(${question.verb})`);
+        const correctAnswer = conjugate(question.verb, question.person);
+        gameDiv.innerHTML = `
+          <h2>Hard Round: Question ${hardIndex + 1} of ${hardQuestions.length}</h2>
+          <form id="answerForm" onsubmit="event.preventDefault(); submitHardAnswer('${question.verb}', '${correctAnswer}');">
+            <p>${sentence.replace("______", "<input type='text' id='userAnswer' autocomplete='off' placeholder='Your answer' required>")}</p>
+            <button type="submit">Submit</button>
+          </form>
+          <div id="feedback"></div>
+          <p>Score: ${score}/${hardQuestions.length} (${Math.round((score/(hardIndex || 1))*100)}%)</p>
+        `;
+        document.getElementById("userAnswer").focus();
+      } else {
+        endHardRound();
+      }
+    }
+
+    function submitHardAnswer(verb, correctAnswer) {
+      const userInput = document.getElementById("userAnswer").value.trim().toLowerCase();
+      let isCorrect = (userInput === correctAnswer.toLowerCase());
+      const feedbackDiv = document.getElementById("feedback");
+      if (isCorrect) {
+        score++;
+        feedbackDiv.innerHTML = "<span style='color: green;'>✓</span>";
+      } else {
+        const question = hardQuestions[hardIndex];
+        incorrectAnswers.push({
+          sentence: question.template.replace("(VERB)", `(${verb})`),
+          yourAnswer: userInput,
+          correctAnswer: correctAnswer
+        });
+        feedbackDiv.innerHTML = "<span style='color: red;'>✕</span>";
+      }
+      setTimeout(() => {
+        hardIndex++;
+        showHardQuestion();
+      }, 300);
+    }
+
+    function endHardRound() {
+      const total = hardQuestions.length;
+      const percentage = Math.round((score / total) * 100);
+      hardRoundResult = percentage;
+      let feedbackHTML = `<h2>Hard Round Complete!</h2>
+                          <p>Your score: ${score}/${total} (${percentage}%)</p>`;
+      if (incorrectAnswers.length > 0) {
+        feedbackHTML += `<h3>Review Incorrect Answers:</h3>
+                         <table>
+                           <tr>
+                             <th>Sentence</th>
+                             <th>Your Answer</th>
+                             <th>Correct Answer</th>
+                           </tr>`;
+        incorrectAnswers.forEach(item => {
+          feedbackHTML += `<tr>
+                             <td>${item.sentence}</td>
+                             <td>${item.yourAnswer}</td>
+                             <td>${item.correctAnswer}</td>
+                           </tr>`;
+        });
+        feedbackHTML += `</table>`;
+      } else {
+        feedbackHTML += `<p>Excellent! All answers were correct.</p>`;
+      }
+      feedbackHTML += `<p>Would you like to play again?</p>
+                       <button onclick="showMenu()">Yes, back to main menu</button>
+                       <button onclick="quitGame()">No, exit</button>`;
+      gameDiv.innerHTML = feedbackHTML;
+    }
+
+    // ---------------- Bonus Mode Functions ----------------
+    function startBonusMode() {
+      bonusTime = 60;
+      bonusScore = 0;
+      bonusTotal = 0;
+      bonusTimer = setInterval(() => {
+        bonusTime--;
+        updateBonusTimer();
+        if (bonusTime <= 0) {
+          endBonusMode();
+        }
+      }, 1000);
+      showBonusQuestion();
+    }
+
+    function updateBonusTimer() {
+      const timerDiv = document.getElementById("timer");
+      if (timerDiv) {
+        timerDiv.textContent = `Time Remaining: ${bonusTime} seconds`;
+      }
+    }
+
+    function showBonusQuestion() {
+      if (bonusTime > 0) {
+        const combined = getCombinedQuestions();
+        const randomIndex = Math.floor(Math.random() * combined.length);
+        currentBonusQuestion = combined[randomIndex];
+        const sentence = currentBonusQuestion.template.replace("(VERB)", `(${currentBonusQuestion.verb})`);
+        const correctAnswer = conjugate(currentBonusQuestion.verb, currentBonusQuestion.person);
+        gameDiv.innerHTML = `
+          <div id="timer">Time Remaining: ${bonusTime} seconds</div>
+          <h2>Bonus Mode</h2>
+          <form id="answerForm" onsubmit="event.preventDefault(); submitBonusAnswer('${currentBonusQuestion.verb}', '${correctAnswer}');">
+            <p>${sentence.replace("______", "<input type='text' id='userAnswer' autocomplete='off' placeholder='Your answer' required>")}</p>
+            <button type="submit">Submit</button>
+          </form>
+          <div id="feedback"></div>
+          <p>Score: ${bonusScore}/${bonusTotal} (${bonusTotal ? Math.round((bonusScore/bonusTotal)*100) : 0}%)</p>
+        `;
+        document.getElementById("userAnswer").focus();
+      }
+    }
+
+    function submitBonusAnswer(verb, correctAnswer) {
+      if (bonusTime <= 0) return;
+      bonusTotal++;
+      const userInput = document.getElementById("userAnswer").value.trim().toLowerCase();
+      let isCorrect = (userInput === correctAnswer.toLowerCase());
+      const feedbackDiv = document.getElementById("feedback");
+      if (isCorrect) {
+        bonusScore++;
+        feedbackDiv.innerHTML = "<span style='color: green;'>✓</span>";
+      } else {
+        feedbackDiv.innerHTML = "<span style='color: red;'>✕</span>";
+      }
+      setTimeout(() => {
+        showBonusQuestion();
+      }, 300);
+    }
+
+    function endBonusMode() {
+      clearInterval(bonusTimer);
+      const percentage = bonusTotal ? Math.round((bonusScore / bonusTotal) * 100) : 0;
+      bonusModeResult = percentage;
+      let feedbackHTML = `<h2>Time's Up!</h2>
+                          <p>Your bonus mode score: ${bonusScore}/${bonusTotal} (${percentage}%)</p>
+                          <p>Would you like to try again?</p>
+                          <button onclick="showMenu()">Yes, back to main menu</button>
+                          <button onclick="quitGame()">No, exit</button>`;
+      gameDiv.innerHTML = feedbackHTML;
+    }
+
+    // ---------------- Quit Game ----------------
+    function quitGame() {
+      gameDiv.innerHTML = `<h2>Thanks for practicing!</h2>`;
+    }
+
+    // ---------------- Start ----------------
+    showMenu();
+  </script>
+</body>
+</html>
