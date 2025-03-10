@@ -36,6 +36,14 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .accent-buttons {
+      margin-top: 5px;
+    }
+    .accent-buttons button {
+      padding: 4px 8px;
+      font-size: 16px;
+      margin-right: 4px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -93,10 +101,7 @@
       ]
     };
 
-    // Sentence templates for each verb type.
-    // "______" indicates the blank for the answer.
-    // "(VERB)" will be replaced by the actual infinitive.
-    // "person" is used for conjugation.
+    // Sentence templates for normal rounds (same as before)
     const sentenceTemplates = {
       "ar": [
         { template: "Yo ______ (VERB) el coche de mi padre los domingos.", person: "yo" },
@@ -142,20 +147,35 @@
       ]
     };
 
+    // New Hard Mode Questions (more challenging sentences/verbs)
+    const hardModeQuestions = [
+      { template: "Cuando yo ______ (limpiar) mi habitación, encuentro paz.", verb: "limpiar", person: "yo" },
+      { template: "Si tú ______ (beber) suficiente agua, te sentirás mejor.", verb: "beber", person: "tú" },
+      { template: "Mi amigo ______ (decidir) estudiar en la universidad.", verb: "decidir", person: "él" },
+      { template: "Aunque ella ______ (viajar) a menudo, nunca se cansa.", verb: "viajar", person: "ella" },
+      { template: "Nosotros ______ (disfrutar) cada momento del día.", verb: "disfrutar", person: "nosotros" },
+      { template: "Ellos ______ (responder) a todas las preguntas con entusiasmo.", verb: "responder", person: "ellos" },
+      { template: "Cuando vosotros ______ (completar) el proyecto, os felicitamos.", verb: "completar", person: "vosotros" },
+      { template: "Mi hermana ______ (descubrir) nuevos lugares en cada viaje.", verb: "descubrir", person: "ella" },
+      { template: "Tú ______ (observar) las estrellas en el cielo nocturno.", verb: "observar", person: "tú" },
+      { template: "Él ______ (apoyar) a sus amigos en momentos difíciles.", verb: "apoyar", person: "él" },
+      { template: "Nosotros ______ (asistir) a la conferencia sobre tecnología.", verb: "asistir", person: "nosotros" },
+      { template: "Ellas ______ (cambiar) sus planes por mejores oportunidades.", verb: "cambiar", person: "ellas" }
+    ];
+
     // ---------------- Global Game State Variables ----------------
     let currentRound = null;       // "ar", "er", or "ir" for normal rounds
     let currentIndex = 0;          // Question index for normal rounds
     let score = 0;
     let incorrectAnswers = [];     // To store incorrect answers for review
 
-    // To track overall scores for each mode.
+    // Overall scores for each mode
     const normalRoundsResults = { ar: null, er: null, ir: null };
     let hardRoundResult = null;
     let bonusModeResult = null;
     let unlockedExtraModes = false;
 
-    // For Hard Round mode
-    let hardQuestions = [];        // Array of 12 mixed questions
+    // For Hard Mode (using our new hardModeQuestions)
     let hardIndex = 0;
 
     // For Bonus Mode
@@ -164,6 +184,18 @@
     let bonusScore = 0;
     let bonusTotal = 0;
     let currentBonusQuestion = null;
+
+    // Motivational messages
+    const motivationalMessages = [
+      "Great job!",
+      "Excellent work!",
+      "Keep up the great work!",
+      "You're doing awesome!",
+      "Fantastic effort!"
+    ];
+    function getMotivationalMessage() {
+      return motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+    }
 
     // ---------------- Utility Functions ----------------
     function getCombinedQuestions() {
@@ -190,7 +222,11 @@
       return array;
     }
 
+    // Conjugate a regular verb in the present tense based on the subject.
+    // Also treat "ella" as "él" and "ellas" as "ellos" for conjugation purposes.
     function conjugate(verb, person) {
+      if (person === "ella") person = "él";
+      if (person === "ellas") person = "ellos";
       const ending = verb.slice(-2);
       const stem = verb.slice(0, -2);
       if (ending === "ar") {
@@ -227,9 +263,23 @@
       return "";
     }
 
+    // ---------------- Accent Button Insertion ----------------
+    function insertAccent(accent) {
+      var input = document.getElementById("userAnswer");
+      if (!input) return;
+      let start = input.selectionStart;
+      let end = input.selectionEnd;
+      let value = input.value;
+      input.value = value.substring(0, start) + accent + value.substring(end);
+      input.selectionStart = input.selectionEnd = start + accent.length;
+      input.focus();
+    }
+
     // ---------------- Main Display Function ----------------
     const gameDiv = document.getElementById("game");
 
+    // The Home Menu: shows mode buttons (with overall scores), tooltips for locked extra modes,
+    // and a conjugation table with example verbs.
     function showMenu() {
       const arScore = normalRoundsResults.ar !== null ? normalRoundsResults.ar + "%" : "Not played yet";
       const erScore = normalRoundsResults.er !== null ? normalRoundsResults.er + "%" : "Not played yet";
@@ -337,6 +387,14 @@
           <h2>Question ${currentIndex + 1} of ${verbLists[currentRound].length}</h2>
           <form id="answerForm" onsubmit="event.preventDefault(); submitAnswer('${verb}', '${correctAnswer}');">
             <p>${sentence.replace("______", "<input type='text' id='userAnswer' autocomplete='off' placeholder='Your answer' required>")}</p>
+            <div class="accent-buttons">
+              <button type="button" onclick="insertAccent('á')">á</button>
+              <button type="button" onclick="insertAccent('é')">é</button>
+              <button type="button" onclick="insertAccent('í')">í</button>
+              <button type="button" onclick="insertAccent('ó')">ó</button>
+              <button type="button" onclick="insertAccent('ú')">ú</button>
+              <button type="button" onclick="insertAccent('ñ')">ñ</button>
+            </div>
             <button type="submit">Submit</button>
           </form>
           <div id="feedback"></div>
@@ -384,9 +442,9 @@
       ) {
         unlockedExtraModes = true;
       }
-      
       let feedbackHTML = `<h2>Round Complete!</h2>
-                          <p>Your score: ${score}/${total} (${percentage}%)</p>`;
+                          <p>Your score: ${score}/${total} (${percentage}%)</p>
+                          <p>${getMotivationalMessage()}</p>`;
       if (incorrectAnswers.length > 0) {
         feedbackHTML += `<h3>Review Incorrect Answers:</h3>
                          <table>
@@ -412,10 +470,8 @@
       gameDiv.innerHTML = feedbackHTML;
     }
 
-    // ---------------- Hard Round Functions ----------------
+    // ---------------- Hard Mode Functions ----------------
     function startHardRound() {
-      const combined = shuffleArray(getCombinedQuestions());
-      hardQuestions = combined.slice(0, 12);
       hardIndex = 0;
       score = 0;
       incorrectAnswers = [];
@@ -423,18 +479,26 @@
     }
 
     function showHardQuestion() {
-      if (hardIndex < hardQuestions.length) {
-        const question = hardQuestions[hardIndex];
+      if (hardIndex < hardModeQuestions.length) {
+        const question = hardModeQuestions[hardIndex];
         const sentence = question.template.replace("(VERB)", `(${question.verb})`);
         const correctAnswer = conjugate(question.verb, question.person);
         gameDiv.innerHTML = `
-          <h2>Hard Round: Question ${hardIndex + 1} of ${hardQuestions.length}</h2>
+          <h2>Hard Round: Question ${hardIndex + 1} of ${hardModeQuestions.length}</h2>
           <form id="answerForm" onsubmit="event.preventDefault(); submitHardAnswer('${question.verb}', '${correctAnswer}');">
             <p>${sentence.replace("______", "<input type='text' id='userAnswer' autocomplete='off' placeholder='Your answer' required>")}</p>
+            <div class="accent-buttons">
+              <button type="button" onclick="insertAccent('á')">á</button>
+              <button type="button" onclick="insertAccent('é')">é</button>
+              <button type="button" onclick="insertAccent('í')">í</button>
+              <button type="button" onclick="insertAccent('ó')">ó</button>
+              <button type="button" onclick="insertAccent('ú')">ú</button>
+              <button type="button" onclick="insertAccent('ñ')">ñ</button>
+            </div>
             <button type="submit">Submit</button>
           </form>
           <div id="feedback"></div>
-          <p>Score: ${score}/${hardQuestions.length} (${Math.round((score/(hardIndex || 1))*100)}%)</p>
+          <p>Score: ${score}/${hardModeQuestions.length} (${Math.round((score/(hardIndex || 1))*100)}%)</p>
         `;
         document.getElementById("userAnswer").focus();
       } else {
@@ -450,7 +514,7 @@
         score++;
         feedbackDiv.innerHTML = "<span style='color: green;'>✓</span>";
       } else {
-        const question = hardQuestions[hardIndex];
+        const question = hardModeQuestions[hardIndex];
         incorrectAnswers.push({
           sentence: question.template.replace("(VERB)", `(${verb})`),
           yourAnswer: userInput,
@@ -465,11 +529,12 @@
     }
 
     function endHardRound() {
-      const total = hardQuestions.length;
+      const total = hardModeQuestions.length;
       const percentage = Math.round((score / total) * 100);
       hardRoundResult = percentage;
       let feedbackHTML = `<h2>Hard Round Complete!</h2>
-                          <p>Your score: ${score}/${total} (${percentage}%)</p>`;
+                          <p>Your score: ${score}/${total} (${percentage}%)</p>
+                          <p>${getMotivationalMessage()}</p>`;
       if (incorrectAnswers.length > 0) {
         feedbackHTML += `<h3>Review Incorrect Answers:</h3>
                          <table>
@@ -529,6 +594,14 @@
           <h2>Bonus Mode</h2>
           <form id="answerForm" onsubmit="event.preventDefault(); submitBonusAnswer('${currentBonusQuestion.verb}', '${correctAnswer}');">
             <p>${sentence.replace("______", "<input type='text' id='userAnswer' autocomplete='off' placeholder='Your answer' required>")}</p>
+            <div class="accent-buttons">
+              <button type="button" onclick="insertAccent('á')">á</button>
+              <button type="button" onclick="insertAccent('é')">é</button>
+              <button type="button" onclick="insertAccent('í')">í</button>
+              <button type="button" onclick="insertAccent('ó')">ó</button>
+              <button type="button" onclick="insertAccent('ú')">ú</button>
+              <button type="button" onclick="insertAccent('ñ')">ñ</button>
+            </div>
             <button type="submit">Submit</button>
           </form>
           <div id="feedback"></div>
@@ -561,6 +634,7 @@
       bonusModeResult = percentage;
       let feedbackHTML = `<h2>Time's Up!</h2>
                           <p>Your bonus mode score: ${bonusScore}/${bonusTotal} (${percentage}%)</p>
+                          <p>${getMotivationalMessage()}</p>
                           <p>Would you like to try again?</p>
                           <button onclick="showMenu()">Yes, back to main menu</button>
                           <button onclick="quitGame()">No, exit</button>`;
@@ -572,7 +646,7 @@
       gameDiv.innerHTML = `<h2>Thanks for practicing!</h2>`;
     }
 
-    // ---------------- Start ----------------
+    // ---------------- Start the Game ----------------
     showMenu();
   </script>
 </body>
